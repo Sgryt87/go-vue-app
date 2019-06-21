@@ -1,0 +1,10 @@
+{
+  "db_user": "root",
+  "db_password": "root",
+  "db_name": "go_vue",
+  "pkg_name": "db",
+  "tag_label": "xorm",
+  "xorm": true,
+  "only_base_tables": true,
+  "ignore_nullables": true
+}
