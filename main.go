@@ -2,6 +2,7 @@ package main
 
 import (
 	"CODE/goVue/src/system/app"
+	DB "CODE/goVue/src/system/db"
 	"flag"
 	"github.com/joho/godotenv"
 	"os"
@@ -24,7 +25,11 @@ func init() {
 }
 
 func main() {
+	if db, err := DB.Connect(); err != nil {
+		panic(err)
+	}
+
 	s := app.NewServer()
-	s.Init(&port)
+	s.Init(&port, db)
 	s.Start()
 }

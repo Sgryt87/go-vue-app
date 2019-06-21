@@ -2,6 +2,38 @@
 
 
 [[projects]]
+  digest = "1:ec6f9bf5e274c833c911923c9193867f3f18788c461f76f05f62bb1510e0ae65"
+  name = "github.com/go-sql-driver/mysql"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "72cd26f257d44c1114970e19afddcd812016007e"
+  version = "v1.4.1"
+
+[[projects]]
+  digest = "1:43c0f7d28e1d4359041ef2d2ed2e37f599a6c623b1c59aac0d04da2fda29bbb3"
+  name = "github.com/go-xorm/builder"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "1d658d7596c25394aab557ef5b50ef35bf706384"
+  version = "v0.3.4"
+
+[[projects]]
+  digest = "1:3a0128b50d38343b108e97b5b7d86d384df2cbd06ec7db69cb37e62d1e349009"
+  name = "github.com/go-xorm/core"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a31f53637037b3461649b8a9a03e13b26d31f12d"
+  version = "v0.6.3"
+
+[[projects]]
+  digest = "1:ccbc965d162915fb594f739e493bc70a02dcdd24a996708cb15daf694f0d5ec1"
+  name = "github.com/go-xorm/xorm"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7c4e044547752088425f7e1aac6c83c80ee53a1c"
+  version = "v0.7.3"
+
+[[projects]]
   digest = "1:ecd9aa82687cf31d1585d4ac61d0ba180e42e8a6182b85bd785fcca8dfeefc1b"
   name = "github.com/joho/godotenv"
   packages = ["."]
@@ -9,9 +41,21 @@
   revision = "23d116af351c84513e1946b527c88823e476be13"
   version = "v1.3.0"
 
+[[projects]]
+  digest = "1:c25289f43ac4a68d88b02245742347c94f1e108c534dda442188015ff80669b3"
+  name = "google.golang.org/appengine"
+  packages = ["cloudsql"]
+  pruneopts = "UT"
+  revision = "b2f4a3cf3c67576a2ee09e1fe62656a5086ce880"
+  version = "v1.6.1"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = ["github.com/joho/godotenv"]
+  input-imports = [
+    "github.com/go-sql-driver/mysql",
+    "github.com/go-xorm/xorm",
+    "github.com/joho/godotenv",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

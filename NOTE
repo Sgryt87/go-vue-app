@@ -1,1 +1,4 @@
 go run main.go -port:3000
+db-migrate create add-users
+db-migrate up
+db-migrate down(optional)

@@ -1,0 +1,11 @@
+{
+  "dev": {
+    "host": "localhost",
+    "user": "root",
+    "password": "root",
+    "database": "go_vue",
+    "driver": "mysql",
+    "multipleStatements": true
+  }
+}
+
