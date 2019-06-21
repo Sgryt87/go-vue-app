@@ -13,11 +13,14 @@ import (
 )
 
 var defaults = Configuration{
-	DbUser: "db_user",
-	DbPassword: "db_pw",
-	DbName: "bd_name",
-	PkgName: "DbStructs",
-	TagLabel: "db",
+	DbUser:          "db_user",
+	DbPassword:      "db_pw",
+	DbName:          "bd_name",
+	PkgName:         "DbStructs",
+	TagLabel:        "db",
+	Xorm:            false,
+	OnlyBaseTables:  false,
+	IgnoreNullables: false,
 }
 
 var config Configuration
@@ -30,6 +33,10 @@ type Configuration struct {
 	PkgName string `json:"pkg_name"`
 	// TagLabel produces tags commonly used to match database field names with Go struct members
 	TagLabel string `json:"tag_label"`
+	// Adds the tablename return for the xorm ORM
+	Xorm            bool `json:"xorm"`
+	OnlyBaseTables  bool `json:"only_base_tables"`
+	IgnoreNullables bool `json:"ignore_nullables"`
 }
 
 type ColumnSchema struct {
@@ -45,6 +52,7 @@ type ColumnSchema struct {
 }
 
 func writeStructs(schemas []ColumnSchema) (int, error) {
+
 	file, err := os.Create("db_structs.go")
 	if err != nil {
 		log.Fatal(err)
@@ -62,6 +70,19 @@ func writeStructs(schemas []ColumnSchema) (int, error) {
 		if cs.TableName != currentTable {
 			if currentTable != "" {
 				out = out + "}\n\n"
+				if config.Xorm {
+					out = out + "func (t " + formatName(currentTable) + ") TableName() string {\n" +
+						"\t return \"" + currentTable + "\"\n" +
+						"}\n\n"
+
+					out = out + "func (t " + formatName(currentTable) + ") SetId(id int64) {\n" +
+						"\tt.Id = id\n" +
+						"}\n\n"
+
+					out = out + "func (t " + formatName(currentTable) + ") GetId() int64 {\n" +
+						"\treturn t.Id\n" +
+						"}\n\n"
+				}
 			}
 			out = out + "type " + formatName(cs.TableName) + " struct{\n"
 		}
@@ -76,7 +97,27 @@ func writeStructs(schemas []ColumnSchema) (int, error) {
 		}
 		out = out + "\t" + formatName(cs.ColumnName) + " " + goType
 		if len(config.TagLabel) > 0 {
-			out = out + "\t`" + config.TagLabel + ":\"" + cs.ColumnName + "\"`"
+			if config.Xorm {
+				out = out + "\t`" + config.TagLabel + ":"
+				if cs.ColumnName == "id" {
+					out = out + "\"'" + cs.ColumnName + "' pk autoincr"
+				} else {
+					out = out + "\"" + cs.ColumnName
+				}
+				out = out + "\" json:\"" + cs.ColumnName + "\""
+			} else {
+				out = out + "\t`" + config.TagLabel + ":\"" + cs.ColumnName + "\""
+			}
+
+			// Need to make this an option at some point
+			if true {
+				out = out + " schema:\"" + cs.ColumnName + "\""
+				if goType == "bool" {
+					out = out + " sql:\"default: false\""
+				}
+			}
+
+			out = out + "`"
 		}
 		out = out + "\n"
 		currentTable = cs.TableName
@@ -107,9 +148,21 @@ func getSchema() []ColumnSchema {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-	q := "SELECT TABLE_NAME, COLUMN_NAME, IS_NULLABLE, DATA_TYPE, " +
-		"CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, " +
-		"COLUMN_KEY FROM COLUMNS WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME, ORDINAL_POSITION"
+	q := "SELECT COLUMNS.TABLE_NAME, COLUMNS.COLUMN_NAME, COLUMNS.IS_NULLABLE, COLUMNS.DATA_TYPE, " +
+		"COLUMNS.CHARACTER_MAXIMUM_LENGTH, COLUMNS.NUMERIC_PRECISION, COLUMNS.NUMERIC_SCALE, COLUMNS.COLUMN_TYPE, " +
+		"COLUMNS.COLUMN_KEY FROM COLUMNS "
+
+	if config.OnlyBaseTables {
+		q = q + "LEFT JOIN TABLES ON TABLES.TABLE_NAME = COLUMNS.TABLE_NAME AND TABLES.TABLE_SCHEMA = COLUMNS.TABLE_SCHEMA "
+	}
+
+	q = q + "WHERE COLUMNS.TABLE_SCHEMA = ? "
+
+	if config.OnlyBaseTables {
+		q = q + "AND TABLES.TABLE_TYPE = \"BASE TABLE\" "
+	}
+
+	q = q + "ORDER BY COLUMNS.TABLE_NAME, COLUMNS.ORDINAL_POSITION"
 	rows, err := conn.Query(q, config.DbName)
 	if err != nil {
 		log.Fatal(err)
@@ -145,13 +198,13 @@ func formatName(name string) string {
 
 func goType(col *ColumnSchema) (string, string, error) {
 	requiredImport := ""
-	if col.IsNullable == "YES" {
+	if col.IsNullable == "YES" && !config.IgnoreNullables {
 		requiredImport = "database/sql"
 	}
 	var gt string = ""
 	switch col.DataType {
 	case "char", "varchar", "enum", "set", "text", "longtext", "mediumtext", "tinytext":
-		if col.IsNullable == "YES" {
+		if col.IsNullable == "YES" && !config.IgnoreNullables {
 			gt = "sql.NullString"
 		} else {
 			gt = "string"
@@ -161,13 +214,17 @@ func goType(col *ColumnSchema) (string, string, error) {
 	case "date", "time", "datetime", "timestamp":
 		gt, requiredImport = "time.Time", "time"
 	case "bit", "tinyint", "smallint", "int", "mediumint", "bigint":
-		if col.IsNullable == "YES" {
-			gt = "sql.NullInt64"
+		if col.ColumnType == "tinyint(1) unsigned" {
+			gt = "bool"
 		} else {
-			gt = "int64"
+			if col.IsNullable == "YES" && !config.IgnoreNullables {
+				gt = "sql.NullInt64"
+			} else {
+				gt = "int64"
+			}
 		}
 	case "float", "decimal", "double":
-		if col.IsNullable == "YES" {
+		if col.IsNullable == "YES" && !config.IgnoreNullables {
 			gt = "sql.NullFloat64"
 		} else {
 			gt = "float64"
