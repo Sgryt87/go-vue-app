@@ -9,7 +9,14 @@ import (
 
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// token verification
+		token := r.Header.Get("X-App-Token")
+		if len(token) < 1 {
+			http.Error(w, "Not Authorized", http.StatusUnauthorized)
+			return
+		}
 		log.Println("V1 middleware reached!")
+		log.Println("TOKEN->", token)
 		next.ServeHTTP(w, r)
 	})
 }
