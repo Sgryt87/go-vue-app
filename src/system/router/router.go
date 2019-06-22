@@ -1,6 +1,8 @@
 package router
 
 import (
+	"CODE/goVue/pkg/types/routes"
+	V1SubRoutes "CODE/goVue/src/controllers/v1/router"
 	"github.com/gorilla/mux"
 )
 
@@ -19,6 +21,26 @@ func (r *Router) Init() {
 			Name(route.Name).
 			Handler(route.HandlerFunc)
 	}
+
+	v1SubRoutes := V1SubRoutes.GetRoutes()
+	for name, pack := range v1SubRoutes {
+		r.AttachSubRouterWithMiddleware(name, pack.Routes, pack.Middleware)
+	}
+}
+
+func (r *Router) AttachSubRouterWithMiddleware(path string, subroutes routes.Routes,
+	middleware mux.MiddlewareFunc) (SubRouter *mux.Router) {
+	SubRouter = r.Router.PathPrefix(path).Subrouter()
+	SubRouter.Use(middleware)
+
+	for _, route := range subroutes {
+		SubRouter.
+			Methods(route.Method).
+			Path(route.Pattern).
+			Name(route.Name).
+			Handler(route.HandlerFunc)
+	}
+	return
 }
 
 func NewRouter() (r Router) {
