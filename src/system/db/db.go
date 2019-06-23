@@ -8,12 +8,27 @@ import (
 func Connect(host, port, user, pass, database, options *string) (db *xorm.Engine, err error) {
 	return xorm.NewEngine("mysql", *user+":"+*pass+"@tcp("+
 		*host+":"+*port+")/"+*database+"?charset=utf8&"+*options)
-	//return xorm.NewEngine("mysql", "root:root@tcp(localhost:3306)/sql?charset=utf8")
-	//db, err = xorm.NewEngine("mysql", "root:root@tcp(localhost:3306)/sql?charset=utf8")
-	//if err != nil {
-	//	println("Here DB", err)
-	//	panic(err)
-	//}
-	//db.DBMetas()
-	//return
+}
+
+func Find(DB *xorm.Engine, findBy interface{}, objects interface{}) error {
+	return DB.Find(objects, findBy)
+}
+func FindBy(DB *xorm.Engine, model interface{}) (err error) {
+	_, err = DB.Get(model)
+	return
+}
+func Exists(DB *xorm.Engine, model interface{}) (bool, error) {
+	return DB.Get(model)
+}
+func Update(DB *xorm.Engine, id int64, model interface{}) (err error) {
+	_, err = DB.Id(id).Update(model)
+	return
+}
+func Store(DB *xorm.Engine, model interface{}) (err error) {
+	_, err = DB.Insert(model)
+	return
+}
+func Destroy(DB *xorm.Engine, id int64, model interface{}) (err error) {
+	_, err = DB.Id(id).Delete(model)
+	return
 }

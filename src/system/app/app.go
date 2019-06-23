@@ -28,7 +28,7 @@ func (s *Server) Init(port *string, db *xorm.Engine) {
 func (s *Server) Start() {
 	log.Println("Server started on port: " + s.port)
 	r := router.NewRouter()
-	r.Init()
+	r.Init(s.Db)
 	handler := handlers.LoggingHandler(os.Stdout, handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}),
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "PATH", "DELETE", "HEAD", "OPTIONS"}),
